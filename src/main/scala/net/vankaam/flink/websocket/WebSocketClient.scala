@@ -12,13 +12,14 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.async.Async.{async, await}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
+import java.util.concurrent.atomic.AtomicInteger
 
 
 /**
   * Client that performs the polls for the web socket source function
   */
 class WebSocketClient(url: String,objectName: String, callback: String => Unit) extends LazyLogging {
-  implicit val system: ActorSystem = ActorSystem()
+  implicit val system: ActorSystem = ActorSystem.create("WebSocketClient")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
   /*
@@ -27,15 +28,21 @@ class WebSocketClient(url: String,objectName: String, callback: String => Unit) 
   private var queue: SourceQueueWithComplete[Message] = _
 
 
-  @volatile private var expecting: Int = 0
-  private var pollComplete:Promise[Unit] = _
+  @volatile private var expecting: AtomicInteger = new AtomicInteger(0)
+  private var pollComplete:Promise[Boolean] = _
   private val closePromise = Promise[Unit]()
-  closePromise.future.onComplete(_ =>  {
+
+
+  private val onClose:Future[Unit] = closePromise.future.flatMap(_ => async {
+    await(system.terminate())
+    logger.info("Actor system for web socket client terminated")
     if(!pollComplete.isCompleted) {
       logger.info("Finishing poll complete because socket has closed")
-      pollComplete.success()
+      pollComplete.success(false)
     }
   })
+
+
 
   /**
     * forEach sink handling messages from the server
@@ -60,15 +67,15 @@ class WebSocketClient(url: String,objectName: String, callback: String => Unit) 
     */
   private def onNextMessage(message:String): Unit = {
         callback(message)
-        expecting -= 1
+        val newValue = expecting.decrementAndGet()
         //If we received all messages the poll has finished
-        if (expecting == 0) {
+        if (newValue == 0) {
           logger.debug("Poll has completed")
-          pollComplete.success()
+          pollComplete.success(true)
         }
   }
 
-  def onClosed:Future[Unit] = closePromise.future
+  def onClosed:Future[Unit] = onClose
 
 
   /**
@@ -76,12 +83,12 @@ class WebSocketClient(url: String,objectName: String, callback: String => Unit) 
     * @param offset How many messages to skip
     * @param nr Number of messages from the passed offset
     */
-  def poll(offset: Long, nr: Int): Future[Unit] = {
-    if(expecting != 0) {
+  def poll(offset: Long, nr: Int): Future[Boolean] = {
+    if(expecting.get() != 0) {
       throw new Exception("Cannot poll while not yet completed")
     }
-    expecting = nr
     pollComplete = Promise()
+    expecting.set(10)
 
     queue.offer(TextMessage(s"$nr.$offset"))
     pollComplete.future
@@ -128,7 +135,7 @@ class WebSocketClient(url: String,objectName: String, callback: String => Unit) 
 }
 
 
-trait WebSocketClientFactory {
+trait WebSocketClientFactory extends Serializable {
   /**
     * Construct a new web socket
     * @param url url to the web socket

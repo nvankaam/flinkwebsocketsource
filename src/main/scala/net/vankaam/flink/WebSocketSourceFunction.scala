@@ -43,7 +43,7 @@ class WebSocketSourceFunction(url: String,objectName: String,batchSize: Int, soc
 
   override def run(ctx: SourceFunction.SourceContext[String]): Unit = {
     while(isRunning) {
-      Await.ready(webSocketClient.poll(offset,batchSize),patience)
+      isRunning = Await.result(webSocketClient.poll(offset,batchSize),patience)
       ctx.getCheckpointLock.synchronized {
         while (messageBuffer.nonEmpty) {
           ctx.collect(messageBuffer.dequeue())
@@ -69,7 +69,7 @@ class WebSocketSourceFunction(url: String,objectName: String,batchSize: Int, soc
     * Cancels the current job
     */
   override def cancel(): Unit = {
-    isRunning = false
+    webSocketClient.close()
   }
 
 

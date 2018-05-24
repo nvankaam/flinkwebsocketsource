@@ -60,7 +60,7 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
   "Run" should "Collect exposed data" in async {
     //Arrange
     val component = getOpenComponent
-    val pollCompletionPromise = Promise[Unit]()
+    val pollCompletionPromise = Promise[Boolean]()
 
     when(webSocketClient.poll(0,3)) thenReturn pollCompletionPromise.future
     //Act
@@ -71,8 +71,9 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
     callBack("b")
     callBack("c")
 
-    pollCompletionPromise.success()
+
     completionPromise.success()
+    pollCompletionPromise.success(false)
     await(f)
 
     //Assert
@@ -84,7 +85,7 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
 
   "SnapShotState" should "Return the current offset as state" in async {
     val component = getOpenComponent
-    val pollCompletionPromise = Promise[Unit]()
+    val pollCompletionPromise = Promise[Boolean]()
 
     when(webSocketClient.poll(0,3)) thenReturn pollCompletionPromise.future
     //Act
@@ -95,8 +96,8 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
     callBack("a")
     callBack("b")
     callBack("c")
-    pollCompletionPromise.success()
     completionPromise.success()
+    pollCompletionPromise.success(false)
     await(f)
     val after = component.snapshotState(1,0)
 
