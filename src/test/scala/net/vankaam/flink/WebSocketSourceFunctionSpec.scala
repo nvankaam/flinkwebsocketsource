@@ -1,7 +1,7 @@
 package net.vankaam.flink
 
 
-import net.vankaam.flink.websocket.{WebSocketClient, WebSocketClientFactory}
+import net.vankaam.websocket.{WebSocketClient, WebSocketClientFactory}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.mockito.ArgumentMatchers

@@ -1,7 +1,7 @@
 package net.vankaam.flink
 
 import com.typesafe.scalalogging.LazyLogging
-import net.vankaam.flink.websocket.WebSocketClientFactory
+import net.vankaam.websocket.WebSocketClientFactory
 import org.apache.flink.api.java.utils.ParameterTool
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment

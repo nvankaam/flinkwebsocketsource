@@ -4,7 +4,8 @@ package net.vankaam.flink
 import java.util
 import java.util.Collections
 
-import net.vankaam.flink.websocket.{WebSocketClient, WebSocketClientFactory}
+import com.typesafe.scalalogging.LazyLogging
+import net.vankaam.websocket.{WebSocketClient, WebSocketClientFactory}
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.configuration.Configuration
 
@@ -23,7 +24,7 @@ import scala.concurrent.duration._
   * @param objectName n
   * @param batchSize number of messages requested from the web socket at once
   */
-class WebSocketSourceFunction(url: String,objectName: String,batchSize: Int, socketClientFactory: WebSocketClientFactory) extends RichSourceFunction[String] with ListCheckpointed[java.lang.Long] with Serializable {
+class WebSocketSourceFunction(url: String,objectName: String,batchSize: Int, socketClientFactory: WebSocketClientFactory) extends RichSourceFunction[String] with ListCheckpointed[java.lang.Long] with Serializable with LazyLogging {
 
   /** Time waiting at most for response from the web socket */
   private val patience = 5.seconds
@@ -60,8 +61,9 @@ class WebSocketSourceFunction(url: String,objectName: String,batchSize: Int, soc
     * @param parameters configuration parameters. Currently unused.
     */
   override def open(parameters: Configuration): Unit = {
-    Await.ready(webSocketClient.open(),patience)
+    Await.result(webSocketClient.open(),patience)
     webSocketClient.onClosed.onComplete(_ => cancel())
+    logger.info("Web socket opened")
     super.open(parameters)
   }
 

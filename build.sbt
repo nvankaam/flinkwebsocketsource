@@ -23,13 +23,6 @@ val flinkDependencies = Seq(
   "org.apache.flink" %% "flink-streaming-scala" % flinkVersion % "provided")
 
 
-libraryDependencies += "com.typesafe.akka" %% "akka-http"   % akkaHttpVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-actor"  % akkaVersion
-libraryDependencies += "com.typesafe.akka" %% "akka-stream" % akkaVersion
-// If testkit used, explicitly declare dependency on akka-streams-testkit in same version as akka-actor
-libraryDependencies += "com.typesafe.akka" %% "akka-http-testkit"   % akkaHttpVersion % Test
-libraryDependencies += "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion     % Test
-
 libraryDependencies += "org.json4s" %% "json4s-native" % json4sVersion
 libraryDependencies += "org.mockito" % "mockito-core" % "2.13.0" % Test
 
@@ -56,6 +49,8 @@ lazy val root = (project in file(".")).
   settings(
     libraryDependencies ++= flinkDependencies
   )
+
+unmanagedJars in Compile += file("lib/websocketclient-1.0.jar")
 
 assembly / mainClass := Some("net.vankaam.Job")
 
