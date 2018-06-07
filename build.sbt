@@ -3,54 +3,93 @@ ThisBuild / resolvers ++= Seq(
     Resolver.mavenLocal
 )
 
-name := "FlinkWebSocketSource"
-
-version := "0.1"
-
-organization := "net.vankaam"
-
 ThisBuild / scalaVersion := "2.11.12"
 
-val flinkVersion = "1.4.2"
-val json4sVersion = "3.5.4"
-//See: https://doc.akka.io/docs/akka-http/current/compatibility-guidelines.html
-val akkaVersion = "2.5.12"
-val akkaHttpVersion = "10.1.1"
+lazy val settings = Seq(
+  organization := "net.vankaam",
+  version := "1.0",
+  scalaVersion := "2.11.11",
+  scalacOptions ++= Seq(
+    "-deprecation",
+    "-feature"
+  )
+)
+
+name := "FlinkWebSocketSource"
 
 
-val flinkDependencies = Seq(
-  "org.apache.flink" %% "flink-scala" % flinkVersion % "provided",
-  "org.apache.flink" %% "flink-streaming-scala" % flinkVersion % "provided")
+lazy val dependencies = new {
+  val flinkV = "1.5.0"
+
+  val parserCombinatorV = "1.1.0"
+  val scalaAsyncV = "0.9.7"
+  val scalaJavaCompatV = "0.8.0"
+  val shapelessV = "2.3.3"
+  val scalaTimeV = "0.4.1"
+  val rxV = "0.26.5"
+  val logBackV = "1.1.7"
+  val scalaLoggingV = "3.5.0"
+  val typesafeConfigV = "1.3.1"
+  val json4sV = "3.6.0-M2"
 
 
-libraryDependencies += "org.json4s" %% "json4s-native" % json4sVersion
-libraryDependencies += "org.mockito" % "mockito-core" % "2.13.0" % Test
+  val mockitoV = "2.13.0"
+  val scalaTestV = "3.0.1"
 
-libraryDependencies += "org.scala-lang.modules" % "scala-java8-compat_2.11" % "0.8.0"
-libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.7"
 
-libraryDependencies += "com.typesafe" % "config" % "1.3.1"
+  val flinkScala             = "org.apache.flink"  %% "flink-scala"            % flinkV       % "provided"
+  val flinkStreamingScala   = "org.apache.flink"  %% "flink-streaming-scala"  % flinkV       % "provided"
+  val flinkTable             = "org.apache.flink"  %% "flink-table"            % flinkV       % "provided"
 
-libraryDependencies ++= Seq(
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.0",
+  val parserCombinator = "org.scala-lang.modules" %% "scala-parser-combinators" % parserCombinatorV
+  val scalaAsync = "org.scala-lang.modules" %% "scala-async" % scalaAsyncV
+  val scalaJavaCompat = "org.scala-lang.modules" % "scala-java8-compat_2.11" % scalaJavaCompatV
+  val shapeless = "com.chuusai" %% "shapeless" % shapelessV
+  val scalaTime =  "codes.reactive" %% "scala-time" % scalaTimeV
+  val rx = "io.reactivex" %% "rxscala" % rxV
+  val logBack =  "ch.qos.logback" % "logback-classic" % logBackV
+  val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV
+  val json4sNative = "org.json4s" %% "json4s-native" % json4sV
 
-  "ch.qos.logback" % "logback-classic" % "1.1.7",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+  val typeSafeConfig = "com.typesafe" % "config" % typesafeConfigV
 
-  "org.mockito" % "mockito-core" % "2.13.0" % "test",
-  "org.scalactic" %% "scalactic" % "3.0.1",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+  val mockito = "org.mockito" % "mockito-core" % mockitoV % "test"
+  val scalactic = "org.scalactic" %% "scalactic" % scalaTestV % "test"
+  val scalaTest = "org.scalatest" %% "scalatest" % scalaTestV % "test"
+}
+
+
+
+lazy val commonDependencies = Seq(
+  //Libraries
+  dependencies.parserCombinator,
+  dependencies.scalaAsync,
+  dependencies.scalaJavaCompat,
+  //dependencies.shapeless,
+  dependencies.scalaTime,
+  dependencies.rx,
+  dependencies.logBack,
+  dependencies.scalaLogging,
+  //dependencies.json4sNative,
+  dependencies.typeSafeConfig,
+
+  //Test
+  dependencies.mockito,
+  dependencies.scalactic,
+  dependencies.scalaTest
 )
 
 
-
+lazy val flinkDependencies = Seq(
+  dependencies.flinkScala,
+  dependencies.flinkStreamingScala,
+  dependencies.flinkTable
+)
 
 lazy val root = (project in file(".")).
-  settings(
-    libraryDependencies ++= flinkDependencies
+  settings(settings,
+    libraryDependencies ++= flinkDependencies ++ commonDependencies
   )
-
-unmanagedJars in Compile += file("lib/websocketclient-1.0.jar")
 
 assembly / mainClass := Some("net.vankaam.Job")
 
@@ -64,5 +103,15 @@ Compile / run  := Defaults.runTask(Compile / fullClasspath,
 Compile / run / fork := true
 Global / cancelable := true
 
+assemblyMergeStrategy in assembly := {
+  case PathList("com","typesafe","config", xs @ _*) => MergeStrategy.first
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}
+
 // exclude Scala library from assembly
 assembly / assemblyOption  := (assembly / assemblyOption).value.copy(includeScala = false)
+
+
+test in assembly := {}

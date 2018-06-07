@@ -72,7 +72,7 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
     callBack("c")
 
 
-    completionPromise.success()
+    completionPromise.success(())
     pollCompletionPromise.success(false)
     await(f)
 
@@ -96,7 +96,7 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
     callBack("a")
     callBack("b")
     callBack("c")
-    completionPromise.success()
+    completionPromise.success(())
     pollCompletionPromise.success(false)
     await(f)
     val after = component.snapshotState(1,0)
@@ -122,7 +122,7 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
 
   }
 
-  private def getComponent: WebSocketSourceFunction = new WebSocketSourceFunction(testUrl,testObject,testBatchSize,webSocketClientFactory)
+  private def getComponent: WebSocketSourceFunction = new WebSocketSourceFunction(testUrl,testObject,testBatchSize,webSocketClientFactory,None)
 
   private def getOpenComponent: WebSocketSourceFunction = {
     val component =getComponent
@@ -134,7 +134,7 @@ class WebSocketSourceFunctionSpec  extends AsyncFlatSpec with BeforeAndAfterEach
     super.beforeEach()
     completionPromise = Promise[Unit]()
     webSocketClient = mock[WebSocketClient]
-    when(webSocketClient.open()).thenReturn(Future.successful())
+    when(webSocketClient.open()).thenReturn(Future.successful(()))
     when(webSocketClient.onClosed) thenReturn completionPromise.future
 
     ctx = mock[SourceFunction.SourceContext[String]]

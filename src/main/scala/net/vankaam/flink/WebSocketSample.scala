@@ -1,11 +1,9 @@
 package net.vankaam.flink
 
 import com.typesafe.scalalogging.LazyLogging
-import net.vankaam.websocket.WebSocketClientFactory
 import org.apache.flink.api.java.utils.ParameterTool
-import org.apache.flink.api.scala._
+import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-
 /**
   * A sample Flink job that uses the web socket source function
   *
@@ -33,7 +31,7 @@ object WebSocketSample extends LazyLogging {
       val batchSize = 10
 
       //Create the source
-      val source = new WebSocketSourceFunction(url,subject,batchSize,WebSocketClientFactory)
+      val source = WebSocketSourceFunction(url,subject,batchSize)
 
       //Print results in console
       env.addSource(source).addSink(logger.info(_))
